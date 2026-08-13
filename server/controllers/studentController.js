@@ -1,23 +1,21 @@
 const db = require("../config/db");
 
-// GET
+// GET all students
 const getStudents = (req, res) => {
     const sql = "SELECT * FROM students ORDER BY id DESC";
 
     db.query(sql, (err, results) => {
         if (err) {
-            console.error(err);
             return res.status(500).json({
                 message: "Failed to fetch students"
             });
         }
 
-        res.status(200).json(results);
+        res.json(results);
     });
 };
 
-
-// POST
+// POST new student
 const createStudent = (req, res) => {
     const { student_id, name, email, course, phone } = req.body;
 
@@ -52,8 +50,7 @@ const createStudent = (req, res) => {
     );
 };
 
-
-// PUT
+// PUT update student
 const updateStudent = (req, res) => {
     const { id } = req.params;
     const { student_id, name, email, course, phone } = req.body;
@@ -87,17 +84,72 @@ const updateStudent = (req, res) => {
                 });
             }
 
-            res.status(200).json({
+            res.json({
                 message: "Student updated successfully"
             });
         }
     );
 };
 
+// DELETE student
+const deleteStudent = (req, res) => {
+    const { id } = req.params;
 
-// EXPORT — KEEP THIS AT THE VERY BOTTOM
+    const sql = "DELETE FROM students WHERE id = ?";
+
+    db.query(sql, [id], (err, result) => {
+        if (err) {
+            return res.status(500).json({
+                message: "Failed to delete student"
+            });
+        }
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                message: "Student not found"
+            });
+        }
+
+        res.json({
+            message: "Student deleted successfully"
+        });
+    });
+};
+
+// SEARCH students
+const searchStudents = (req, res) => {
+    const { search } = req.query;
+
+    const sql = `
+        SELECT * FROM students
+        WHERE name LIKE ?
+        OR student_id LIKE ?
+        OR email LIKE ?
+        OR course LIKE ?
+        ORDER BY id DESC
+    `;
+
+    const value = `%${search || ""}%`;
+
+    db.query(
+        sql,
+        [value, value, value, value],
+        (err, results) => {
+            if (err) {
+                return res.status(500).json({
+                    message: "Search failed"
+                });
+            }
+
+            res.json(results);
+        }
+    );
+};
+
 module.exports = {
     getStudents,
     createStudent,
-    updateStudent
+    updateStudent,
+    deleteStudent,
+    searchStudents
 };
